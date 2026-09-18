@@ -7,6 +7,8 @@
 #include "mmu.h"
 #include "proc.h"
 
+int shared_counter = 0;
+
 int
 sys_fork(void)
 {
@@ -88,4 +90,37 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+int
+sys_counter_reset(void)
+{
+  shared_counter = 0;
+  return 0;
+}
+
+int
+sys_counter_increment(void)
+{
+  int old;
+  volatile int delay;
+
+  // Read the shared value.
+  old = shared_counter;
+
+  // Deliberately widen the race window.
+  for(delay = 0; delay < 100000; delay++)
+    ;
+
+  // Write the old value + 1.
+  // There is NO lock protecting this operation.
+  shared_counter = old + 1;
+
+  return shared_counter;
+}
+
+int
+sys_counter_get(void)
+{
+  return shared_counter;
 }
