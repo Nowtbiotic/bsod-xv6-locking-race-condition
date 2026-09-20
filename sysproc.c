@@ -6,8 +6,10 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "spinlock.h"
 
 int shared_counter = 0;
+struct spinlock counter_lock;
 
 int
 sys_fork(void)
@@ -103,7 +105,10 @@ int
 sys_counter_increment(void)
 {
   int old;
+  int new_value;
   volatile int delay;
+
+  acquire(&counter_lock);
 
   // Read the shared value.
   old = shared_counter;
@@ -113,10 +118,12 @@ sys_counter_increment(void)
     ;
 
   // Write the old value + 1.
-  // There is NO lock protecting this operation.
-  shared_counter = old + 1;
+  new_value = old + 1;
+  shared_counter = new_value;
 
-  return shared_counter;
+  release(&counter_lock);
+
+  return new_value;
 }
 
 int

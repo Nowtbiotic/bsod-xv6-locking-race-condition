@@ -5,11 +5,13 @@
 #include "mmu.h"
 #include "proc.h"
 #include "x86.h"
+#include "spinlock.h"
 
 static void startothers(void);
 static void mpmain(void)  __attribute__((noreturn));
 extern pde_t *kpgdir;
 extern char end[]; // first address after kernel loaded from ELF file
+extern struct spinlock counter_lock;
 
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
@@ -27,6 +29,7 @@ main(void)
   consoleinit();   // console hardware
   uartinit();      // serial port
   pinit();         // process table
+  initlock(&counter_lock, "counter");
   tvinit();        // trap vectors
   binit();         // buffer cache
   fileinit();      // file table
